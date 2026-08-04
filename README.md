@@ -1,5 +1,18 @@
 # Skills
 
+## Quick Start
+
+Copy this prompt into your coding agent:
+
+```text
+Add the `dev-task` skill from this repository to the shared skills available in
+your current agent environment. Merge the principles from `AGENTS.md` into the
+appropriate shared or global agent rules. Determine the correct locations and
+formats from the agent, tools, and conventions currently in use. Preserve
+existing configuration, avoid duplicate instructions, and verify that the
+installed skill and merged rules are discoverable and active.
+```
+
 A compact collection of agent skills for disciplined software development. The repository favors high-value outcomes, explicit constraints, small diffs, and evidence-based completion.
 
 ## Available Skills
@@ -19,22 +32,6 @@ Use `dev-task` when implementing a feature, bug fix, refactor, or other change i
 - create a `.dev-tasks/<name>.md` decision record only when clarification and decision tracking are genuinely useful;
 - implement the smallest coherent change and verify its real behavior;
 - report the outcome, implementation, validation, diff cost, and deviations from the original decisions.
-
-## Installation
-
-Install the skill in your user-level Codex skills directory:
-
-```bash
-mkdir -p ~/.codex/skills
-cp -R dev-task ~/.codex/skills/dev-task
-```
-
-For repository-local installation, copy it into the target repository instead:
-
-```bash
-mkdir -p .codex/skills
-cp -R dev-task .codex/skills/dev-task
-```
 
 ## Repository Structure
 
