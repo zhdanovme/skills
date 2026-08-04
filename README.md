@@ -1,0 +1,50 @@
+# Skills
+
+A compact collection of agent skills for disciplined software development. The repository favors high-value outcomes, explicit constraints, small diffs, and evidence-based completion.
+
+## Available Skills
+
+| Skill | Purpose |
+| --- | --- |
+| [`dev-task`](dev-task/SKILL.md) | Implement repository changes with clear scope, explicit invariants, consequential decision tracking, focused verification, and concise result reporting. |
+
+## `dev-task`
+
+Use `dev-task` when implementing a feature, bug fix, refactor, or other change in an existing repository. It guides the agent to:
+
+- understand the relevant architecture, behavior, conventions, constraints, and tests;
+- separate the desired outcome from a proposed implementation;
+- define observable results, invariants, scope, and completion evidence;
+- identify decisions that materially affect behavior, architecture, data, compatibility, risk, or cost;
+- create a `.dev-tasks/<name>.md` decision record only when clarification and decision tracking are genuinely useful;
+- implement the smallest coherent change and verify its real behavior;
+- report the outcome, implementation, validation, diff cost, and deviations from the original decisions.
+
+## Installation
+
+Install the skill in your user-level Codex skills directory:
+
+```bash
+mkdir -p ~/.codex/skills
+cp -R dev-task ~/.codex/skills/dev-task
+```
+
+For repository-local installation, copy it into the target repository instead:
+
+```bash
+mkdir -p .codex/skills
+cp -R dev-task .codex/skills/dev-task
+```
+
+## Repository Structure
+
+```text
+.
+|-- AGENTS.md
+|-- README.md
+`-- dev-task/
+    `-- SKILL.md
+```
+
+- [`AGENTS.md`](AGENTS.md) defines the repository's shared principles for complexity, critical reasoning, and information design.
+- [`dev-task/SKILL.md`](dev-task/SKILL.md) contains the skill metadata and operating instructions.
