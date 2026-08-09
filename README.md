@@ -5,8 +5,9 @@
 Copy this prompt into your coding agent:
 
 ```text
-Add the `dev-task` skill from this repository to the shared skills available in
-your current agent environment. Merge the principles from `AGENTS.md` into the
+Use https://github.com/zhdanovme/skills as the source repository. Add its
+`dev-task` skill to the shared skills available in your current agent
+environment. Merge the principles from the repository's `AGENTS.md` into the
 appropriate shared or global agent rules. Determine the correct locations and
 formats from the agent, tools, and conventions currently in use. Preserve
 existing configuration, avoid duplicate instructions, and verify that the
