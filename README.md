@@ -1,5 +1,7 @@
 # Skills
 
+[![skills.sh](https://skills.sh/b/zhdanovme/skills)](https://skills.sh/zhdanovme/skills)
+
 ## Quick Start
 
 Copy this prompt into your coding agent:
