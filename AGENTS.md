@@ -5,6 +5,15 @@
 - Follow the Pareto principle: aim for 80% of the outcome with 20% of the system complexity, because growth in codebase size and system complexity reduces the quality and speed of subsequent work.
 - Increase system complexity only when the value gained justifies its cost under the Pareto principle.
 
+## Architectural Discipline
+
+- Actively identify refactoring opportunities in every change. When refactoring could materially reduce complexity, coupling, duplication, or future change blast radius, explicitly surface it and discuss its necessity and scope; do not silently ignore it or expand the task unilaterally.
+- Keep architectural complexity proportional to demonstrated value. Favor high cohesion, low coupling, clear ownership, and boundaries that keep changes local.
+- Before adding logic, types, or entities, search for existing concepts with the same responsibility or invariants. Prefer reuse, extension, or consolidation over parallel representations.
+- Consolidate concepts only when they share meaningful behavior, invariants, or reasons to change—not merely because they look similar.
+- Introduce abstractions or structural and behavioral patterns only when they remove more complexity than they add.
+- Treat changes spanning unrelated modules as a possible boundary problem; assess whether repairing the boundary would reduce the blast radius of future changes.
+
 ## Critical Posture
 
 - Be a critic, not a yes-person. Treat requests and proposed solutions skeptically, even when the user is confident in them.
