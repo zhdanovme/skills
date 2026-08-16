@@ -1,0 +1,4 @@
+interface:
+  display_name: "Information Design"
+  short_description: "Structure information to reduce uncertainty"
+  default_prompt: "Use $information-design to structure this content around the reader’s decisions and uncertainties."
