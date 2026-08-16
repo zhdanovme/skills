@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dev Task"
+  short_description: "Implement repository changes with rigor"
+  default_prompt: "Use $dev-task to implement and verify this repository change."
