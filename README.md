@@ -8,11 +8,12 @@ Copy this prompt into your coding agent:
 
 ```text
 Use https://github.com/zhdanovme/skills as the source repository. Add its
-`dev-task` and `information-design` skills to the shared skills available in
-your current agent environment. Merge the principles from the repository's
-`AGENTS.md` into the appropriate shared or global agent rules. Determine the
-correct locations and formats from the agent, tools, and conventions currently
-in use. Preserve existing configuration, avoid duplicate instructions, and
+`dev-task`, `information-design`, and `learn-from-pr-reviews` skills to the
+shared skills available in your current agent environment. Merge the principles
+from the repository's `AGENTS.md` into the appropriate shared or global agent
+rules. Determine the correct locations and formats from the agent, tools, and
+conventions currently in use. Preserve existing configuration, avoid duplicate
+instructions, and
 verify that the installed skills and merged rules are discoverable and active.
 ```
 
@@ -24,6 +25,7 @@ A compact collection of agent skills for disciplined software development and in
 | --- | --- |
 | [`dev-task`](dev-task/SKILL.md) | Route small changes directly and guide larger changes through root-cause research, architectural review, implementation, verification, and PR review. |
 | [`information-design`](information-design/SKILL.md) | Structure AI responses, documentation, explanations, and landing pages around the reader's relevant uncertainties, decisions, and actions. |
+| [`learn-from-pr-reviews`](learn-from-pr-reviews/SKILL.md) | Read PR feedback and preserve durable, project-specific prevention rules in `AGENTS.md`. |
 
 ## `dev-task`
 
@@ -50,6 +52,16 @@ Use `information-design` when creating, restructuring, or critiquing communicati
 - remove empty repetition while preserving redundancy that improves comprehension, trust, accessibility, error prevention, or conversion;
 - audit the artifact for relevance, evidence, precision, representation, and attention cost.
 
+## `learn-from-pr-reviews`
+
+Use `learn-from-pr-reviews` when reading or addressing pull-request feedback. It guides the agent to:
+
+- collect top-level reviews, inline threads, replies, and relevant PR conversation;
+- distinguish current PR actions from reusable project rules;
+- validate each candidate against the accepted outcome and current repository evidence;
+- create or update the root `AGENTS.md` with one deduplicated `Code Consistency` section;
+- preserve concise, scoped prevention rules while excluding one-off feedback and review history.
+
 ## Repository Structure
 
 ```text
@@ -57,8 +69,14 @@ Use `information-design` when creating, restructuring, or critiquing communicati
 |-- AGENTS.md
 |-- README.md
 |-- dev-task/
-|   `-- SKILL.md
-`-- information-design/
+|   |-- SKILL.md
+|   `-- agents/
+|       `-- openai.yaml
+|-- information-design/
+|   |-- SKILL.md
+|   `-- agents/
+|       `-- openai.yaml
+`-- learn-from-pr-reviews/
     |-- SKILL.md
     `-- agents/
         `-- openai.yaml
@@ -67,3 +85,4 @@ Use `information-design` when creating, restructuring, or critiquing communicati
 - [`AGENTS.md`](AGENTS.md) defines the repository's shared principles for critical reasoning and information design.
 - [`dev-task/SKILL.md`](dev-task/SKILL.md) contains the development workflow and its architecture, complexity, refactoring, and testing principles.
 - [`information-design/SKILL.md`](information-design/SKILL.md) contains the artifact-agnostic information-design workflow and audit.
+- [`learn-from-pr-reviews/SKILL.md`](learn-from-pr-reviews/SKILL.md) contains the PR-feedback triage and durable project-memory workflow.
