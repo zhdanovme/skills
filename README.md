@@ -4,6 +4,52 @@
 
 ## Quick Start
 
+Install all skills and extend the global `AGENTS.md`:
+
+### macOS, Linux, and Unix
+
+```sh
+./install.sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+.\install.ps1
+```
+
+The default target is `$CODEX_HOME`, or `~/.codex` when `CODEX_HOME` is not
+set. Skills are copied into `<target>/skills`. The repository's `AGENTS.md` is
+added to `<target>/AGENTS.md` between these markers:
+
+```text
+<!-- ZHDANOVME:SKILLS:START -->
+<!-- ZHDANOVME:SKILLS:END -->
+```
+
+Running the installer again replaces the existing marked block instead of
+adding a duplicate. Content outside the block and unrelated skills remain
+untouched. To use a different Codex directory:
+
+```sh
+./install.sh /path/to/codex
+```
+
+```powershell
+.\install.ps1 -Target C:\path\to\codex
+```
+
+If Windows blocks local scripts, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+Codex discovers skill changes automatically. Restart Codex only if a newly
+installed skill does not appear.
+
+### Agent-assisted setup
+
 Copy this prompt into your coding agent:
 
 ```text
@@ -16,6 +62,9 @@ conventions currently in use. Preserve existing configuration, avoid duplicate
 instructions, and
 verify that the installed skills and merged rules are discoverable and active.
 ```
+
+The install scripts perform the same skill installation and managed
+`AGENTS.md` extension automatically.
 
 A compact collection of agent skills for disciplined software development and information design. The repository favors high-value outcomes, explicit constraints, maintainable boundaries, effective communication, and evidence-based completion.
 
@@ -68,6 +117,11 @@ Use `learn-from-pr-reviews` when reading or addressing pull-request feedback. It
 .
 |-- AGENTS.md
 |-- README.md
+|-- install.ps1
+|-- install.sh
+|-- tests/
+|   |-- install_test.ps1
+|   `-- install_test.sh
 |-- dev-task/
 |   |-- SKILL.md
 |   `-- agents/
