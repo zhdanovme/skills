@@ -1,0 +1,4 @@
+interface:
+  display_name: "Learn from PR Reviews"
+  short_description: "Turn PR feedback into durable project rules"
+  default_prompt: "Use $learn-from-pr-reviews to read this PR feedback and preserve reusable lessons in AGENTS.md."
