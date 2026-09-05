@@ -112,7 +112,7 @@ Cover changed behavior, regression risk, boundaries, side effects, failure paths
 
 All four sections are mandatory. Only sections 2 and 3 may use `Not applicable`, with a concrete reason.
 
-Keep the four headings in the active plan. Create `<repo-root>/.dev-tasks/<name>.md` only when the work is decision-heavy, crosses subsystems, has dependent stages, or needs handoff. Add an empty deviation log and record only material changes to scope or decisions.
+Keep the four headings in the active plan. Create `<repo-root>/.dev-tasks/<name>.md` only when the work is decision-heavy, crosses subsystems, has dependent stages, or needs handoff. Before creating anything under `.dev-tasks`, ensure the target repository's `.gitignore` contains the idempotent entry `.dev-tasks/`; create `.gitignore` if it does not exist, and preserve all existing entries. Add an empty deviation log and record only material changes to scope or decisions.
 
 ## 4. Review and Revise the Plan
 
