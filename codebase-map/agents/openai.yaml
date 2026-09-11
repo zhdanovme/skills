@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codebase Map"
+  short_description: "Map system architecture, module logic, and volume"
+  default_prompt: "Use $codebase-map to map this repository with Mermaid system-architecture and module-logic diagrams, module and feature runtime volumes, critical flows, assurance, and fitness."

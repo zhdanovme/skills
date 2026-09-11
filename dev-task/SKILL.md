@@ -141,6 +141,7 @@ Inspect the task diff and working tree for missing, unrelated, or accidental cha
 
 After verification, use `$information-design` to build the implementation summary from the actual diff and evidence, not from the original plan. Lead with the outcome, then include only what helps the reader assess the change:
 
+- a concise **System context** section before the change details: explain how the affected part currently works and is structured, including its responsibility, relevant components or boundaries, important control or data flow, and where the change fits; include only the context needed to understand the change and its impact, using one or two sentences for a simple local edit;
 - what changed, where, and why;
 - exact validation commands and results;
 - diff cost: size and what justified it;
