@@ -112,7 +112,25 @@ Cover changed behavior, regression risk, boundaries, side effects, failure paths
 
 All four sections are mandatory. Only sections 2 and 3 may use `Not applicable`, with a concrete reason.
 
-Keep the four headings in the active plan. Create `<repo-root>/.dev-tasks/<name>.md` only when the work is decision-heavy, crosses subsystems, has dependent stages, or needs handoff. Before creating anything under `.dev-tasks`, ensure the target repository's `.gitignore` contains the idempotent entry `.dev-tasks/`; create `.gitignore` if it does not exist, and preserve all existing entries. Add an empty deviation log and record only material changes to scope or decisions.
+Keep the four headings in the active plan. Create `<repo-root>/.dev-tasks/<name>.md` only when the work is decision-heavy, crosses subsystems, has dependent stages, or needs handoff. Before creating anything under `.dev-tasks`, ensure the target repository's `.gitignore` contains the idempotent entry `.dev-tasks/`; create `.gitignore` if it does not exist, and preserve all existing entries. Start every durable task file with this YAML frontmatter:
+
+```yaml
+---
+status: draft
+---
+```
+
+`status` is required and accepts only these values:
+
+| Status | Meaning |
+| --- | --- |
+| `draft` | Evidence gathering, plan creation, or plan review is in progress. |
+| `todo` | The reviewed plan is ready for implementation. |
+| `progress` | Implementation or verification is in progress. |
+| `pr` | A pull request is open and remains the active delivery surface. |
+| `done` | Verification and final review are complete, with no required work remaining. |
+
+Use the lifecycle `draft -> todo -> progress -> pr -> done`. Skip `pr` for local-only work, producing `draft -> todo -> progress -> done`. Update the existing `status` field when the task changes state; do not add custom status values or retain a status history. Add an empty deviation log and record only material changes to scope or decisions.
 
 ## 4. Review and Revise the Plan
 
@@ -125,9 +143,13 @@ Review each section separately, then check that they agree:
 
 Reject a plan with a missing section, collapsed matrix fields, unsupported `Not applicable`, unresolved consequential decision, or uncovered risk. Use an independent reviewer when breadth or risk justifies the coordination cost. Revise until the plan passes; do not code before it does.
 
+For a durable task file, set `status: todo` after the plan passes review.
+
 ## 5. Implement
 
 Follow repository patterns and the approved plan. Keep unrelated changes out of the diff. For a bug, add a regression test that fails on the original defect when practical. Follow test-first development when the user or repository requires it.
+
+For a durable task file, set `status: progress` immediately before implementation begins.
 
 If implementation invalidates the plan, stop and revise the affected plan sections. Record any material deviation before continuing.
 
@@ -154,10 +176,10 @@ Keep direct-change summaries compact. Separate verified fact from reviewer judgm
 
 When PR delivery is in scope and a remote is available:
 
-1. open or update the draft PR with the implementation summary;
+1. open or update the draft PR with the implementation summary, then set a durable task file to `status: pr` only after the PR exists;
 2. review the complete PR diff for correctness, scope, tests, security, compatibility, unnecessary complexity, and accidental edits;
 3. fix material findings and rerun affected checks;
 4. regenerate the summary with `$information-design` when the diff or evidence changes;
 5. update the PR description and readiness state.
 
-For local-only work, perform the same diff review and deliver the summary without opening a PR. Finalize only when no material finding remains and the summary matches the verified diff. Add the PR link and status to the final report when applicable.
+For local-only work, perform the same diff review and deliver the summary without opening a PR. Finalize only when no material finding remains and the summary matches the verified diff. Set a durable task file to `status: done` only at that point, after either the `progress` or `pr` state. Add the PR link and status to the final report when applicable.

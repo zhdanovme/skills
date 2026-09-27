@@ -69,6 +69,10 @@ State the conceptual spine explicitly before dependent details whenever it expla
 
 Build the model at the precision required by the communication contract. Preserve distinctions the reader needs; avoid terminology or structure that costs more attention than it saves.
 
+#### Glossary
+
+Pin a spine term with an explicit definition (term → definition) when its meaning risks drifting across sections, abstraction levels, or readers. Reserve it for spine terms that recur across the artifact—do not define every noun.
+
 ### 4. Add Derivatives by Information Gain
 
 Reveal information in this order when it fits the reader's task:

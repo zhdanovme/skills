@@ -116,7 +116,7 @@ Use `dev-task` when implementing a feature, bug fix, refactor, or other change i
 - show the complete workflow first, then detail each stage in the same order;
 - gather repository evidence for larger or uncertain work before building its review plan;
 - build and review four explicit plan sections: Minimal Reasonable Solution, Matrix Decisions on Complications, Refactoring Options, and Test Coverage Plan;
-- persist `.dev-tasks/<name>.md` only when a durable multi-step or decision-heavy plan is useful, and add `.dev-tasks/` to the target repository's `.gitignore` before creating it;
+- persist `.dev-tasks/<name>.md` only when a durable multi-step or decision-heavy plan is useful, add `.dev-tasks/` to the target repository's `.gitignore`, and track its lifecycle through the structured `draft`, `todo`, `progress`, optional `pr`, and `done` statuses;
 - implement and verify the systemically coherent change rather than optimizing only for the smallest immediate diff;
 - create the implementation summary with `$information-design` from the verified diff and evidence;
 - use that summary for PR delivery, review the complete diff, fix material findings, and refresh the summary before final delivery.
