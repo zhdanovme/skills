@@ -24,6 +24,57 @@ assert_skills_installed() {
   [ "$installed_skills" -gt 0 ] || fail "no repository skills were discovered"
 }
 
+# Installed subagents mirror <skill>/subagents/<platform>/<skill>-* byte for byte,
+# and a home never receives the other platform's definitions.
+assert_subagents_installed() {
+  target=$1
+  platform=$2
+  case $platform in
+    claude) extension=md; other_platform=codex; other=toml ;;
+    codex) extension=toml; other_platform=claude; other=md ;;
+  esac
+  installed_agents=0
+  for skill in "$repo"/*/SKILL.md; do
+    source_dir=${skill%/SKILL.md}
+    name=${source_dir##*/}
+    for agent in "$source_dir/subagents/$platform/$name"-*."$extension"; do
+      [ -f "$agent" ] || continue
+      cmp "$agent" "$target/agents/${agent##*/}" >/dev/null 2>&1 ||
+        fail "${agent##*/} was not installed into $target/agents"
+      installed_agents=$((installed_agents + 1))
+    done
+    for foreign in "$source_dir/subagents/$other_platform/$name"-*."$other"; do
+      [ -f "$foreign" ] || continue
+      if [ -e "$target/agents/${foreign##*/}" ]; then
+        fail "$platform home $target received ${foreign##*/}"
+      fi
+    done
+  done
+  [ "$installed_agents" -gt 0 ] || fail "no $platform subagents were discovered"
+}
+
+# Seeds agents the installer must leave alone (another agent, another skill's prefix,
+# the managed prefix with the other platform's extension) and one stale managed agent.
+seed_agents() {
+  mkdir -p "$1/agents"
+  printf 'keep\n' > "$1/agents/unrelated.$2"
+  printf 'keep\n' > "$1/agents/codebase-map-custom.$2"
+  printf 'keep\n' > "$1/agents/dev-task-custom.$3"
+  printf 'stale\n' > "$1/agents/dev-task-retired.$2"
+}
+
+assert_agents_preserved() {
+  target=$1
+  extension=$2
+  other=$3
+  [ "$(cat "$target/agents/unrelated.$extension" 2>/dev/null)" = keep ] || fail "an unrelated agent was changed in $target"
+  [ "$(cat "$target/agents/codebase-map-custom.$extension" 2>/dev/null)" = keep ] ||
+    fail "an agent of a skill without subagents was changed in $target"
+  [ "$(cat "$target/agents/dev-task-custom.$other" 2>/dev/null)" = keep ] ||
+    fail "an agent with the other platform's extension was changed in $target"
+  [ ! -e "$target/agents/dev-task-retired.$extension" ] || fail "a stale managed agent survived in $target"
+}
+
 assert_managed_block() {
   memory=$1
   [ -f "$memory" ] || fail "$memory was not created"
@@ -74,12 +125,15 @@ printf 'keep\n' > "$target/skills/unrelated/data.txt"
 mkdir -p "$target/skills/dev-task"
 printf 'stale\n' > "$target/skills/dev-task/stale.txt"
 seed_memory "$target/AGENTS.md"
+seed_agents "$target" toml md
 
 "$repo/install.sh" --target "$target" >/dev/null
 cp "$target/AGENTS.md" "$tmp/agents-after-first-install.md"
 "$repo/install.sh" --target "$target" >/dev/null
 
 assert_skills_installed "$target"
+assert_subagents_installed "$target" codex
+assert_agents_preserved "$target" toml md
 [ -f "$target/skills/unrelated/data.txt" ] || fail "unrelated skill was removed"
 [ ! -e "$target/skills/dev-task/stale.txt" ] || fail "stale files in a managed skill were preserved"
 assert_existing_rules_preserved "$target/AGENTS.md"
@@ -91,12 +145,15 @@ cmp "$tmp/agents-after-first-install.md" "$target/AGENTS.md" >/dev/null || fail 
 claude_target="$tmp/claude home"
 mkdir -p "$claude_target"
 seed_memory "$claude_target/CLAUDE.md"
+seed_agents "$claude_target" md toml
 
 "$repo/install.sh" --claude "$claude_target" >/dev/null
 cp "$claude_target/CLAUDE.md" "$tmp/claude-after-first-install.md"
 "$repo/install.sh" --claude "$claude_target" >/dev/null
 
 assert_skills_installed "$claude_target"
+assert_subagents_installed "$claude_target" claude
+assert_agents_preserved "$claude_target" md toml
 assert_existing_rules_preserved "$claude_target/CLAUDE.md"
 assert_managed_block "$claude_target/CLAUDE.md"
 cmp "$tmp/claude-after-first-install.md" "$claude_target/CLAUDE.md" >/dev/null || fail "repeated install changed CLAUDE.md"
@@ -106,6 +163,7 @@ cmp "$tmp/claude-after-first-install.md" "$claude_target/CLAUDE.md" >/dev/null |
 codex_target="$tmp/explicit codex"
 "$repo/install.sh" --codex "$codex_target" >/dev/null
 assert_skills_installed "$codex_target"
+assert_subagents_installed "$codex_target" codex
 assert_managed_block "$codex_target/AGENTS.md"
 [ ! -e "$codex_target/CLAUDE.md" ] || fail "--codex wrote a CLAUDE.md"
 
@@ -113,6 +171,7 @@ assert_managed_block "$codex_target/AGENTS.md"
 positional_target="$tmp/positional codex"
 "$repo/install.sh" "$positional_target" >/dev/null
 assert_managed_block "$positional_target/AGENTS.md"
+assert_subagents_installed "$positional_target" codex
 [ ! -e "$positional_target/CLAUDE.md" ] || fail "a positional directory wrote a CLAUDE.md"
 
 # Without arguments both homes are installed from the environment defaults.
@@ -120,8 +179,10 @@ default_codex="$tmp/default codex"
 default_claude="$tmp/default claude"
 CODEX_HOME="$default_codex" CLAUDE_CONFIG_DIR="$default_claude" "$repo/install.sh" >/dev/null
 assert_skills_installed "$default_codex"
+assert_subagents_installed "$default_codex" codex
 assert_managed_block "$default_codex/AGENTS.md"
 assert_skills_installed "$default_claude"
+assert_subagents_installed "$default_claude" claude
 assert_managed_block "$default_claude/CLAUDE.md"
 [ ! -e "$default_codex/CLAUDE.md" ] || fail "the Codex default home received a CLAUDE.md"
 [ ! -e "$default_claude/AGENTS.md" ] || fail "the Claude default home received an AGENTS.md"
