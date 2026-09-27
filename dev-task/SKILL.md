@@ -4,7 +4,7 @@ description: >-
   Implement features, bug fixes, refactors, and other code changes in an
   existing repository. Use when Codex must change a repository, from a
   low-risk local edit to cross-system work requiring research, a reviewed
-  four-part plan, implementation, verification, summary, and optional PR delivery.
+  four-part plan, implementation, verification, summary, and PR delivery when available.
 ---
 
 # Dev Task
@@ -15,16 +15,19 @@ Deliver the requested behavior at the lowest justified total cost. Prefer a loca
 
 ```mermaid
 flowchart TD
-    A["Requested change"] --> B["Inspect and route"]
+    A["Requested change"] --> B["Inspect and route; recommend a task worktree"]
     B --> C{"All direct-path criteria true?"}
     C -->|Yes| D["Implement"]
-    C -->|No| E["Gather review-plan inputs"]
+    C -->|No| Q{"Exceptionally large or domain-heavy?"}
+    Q -->|Yes| R["Offer $grill-with-docs"]
+    R --> E["Gather review-plan inputs"]
+    Q -->|No| E
     E --> F["Build four-part review plan"]
     F --> G["Review and revise plan"]
     G --> D
     D --> H["Verify"]
     H --> I["Summarize with $information-design"]
-    I --> J{"PR delivery in scope?"}
+    I --> J{"PR available and in scope?"}
     J -->|Yes| K["Open or update draft PR"]
     J -->|No| L["Review complete diff"]
     K --> L
@@ -47,6 +50,10 @@ Use the **direct path** only when every condition holds:
 - change is low-risk and readily reversible.
 
 On the direct path, skip steps 2–4 and continue with implementation. Otherwise use the **reviewed path**.
+
+Recommend a separate Git worktree for each task, including direct-path work, when the repository and environment support it. Work in an existing task-specific worktree if one is already assigned. Preserve uncommitted work in the current checkout when creating a new one.
+
+For exceptionally large work with dependent stages, multiple domain boundaries, or unresolved domain terms or consequential design choices, offer `$grill-with-docs` before settling the review plan. Explain which uncertainties warrant the interview. Run it if the user accepts; otherwise continue the reviewed path using available evidence. Line count alone does not trigger the interview.
 
 Ask one focused question only when a missing choice would change behavior, compatibility, risk, or scope. Decide reversible details independently.
 
@@ -174,7 +181,9 @@ Keep direct-change summaries compact. Separate verified fact from reviewer judgm
 
 ## 8. Deliver and Review
 
-When PR delivery is in scope and a remote is available:
+Recommend a pull request as the default delivery for each task when a remote and PR access are available. If the user requested local-only work or PR creation is unavailable, deliver locally and state why there is no PR.
+
+For PR delivery:
 
 1. open or update the draft PR with the implementation summary, then set a durable task file to `status: pr` only after the PR exists;
 2. review the complete PR diff for correctness, scope, tests, security, compatibility, unnecessary complexity, and accidental edits;
