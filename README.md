@@ -113,6 +113,8 @@ Use `codebase-map` when onboarding to a repository, assessing its architecture, 
 Use `dev-task` when implementing a feature, bug fix, refactor, or other change in an existing repository. It guides the agent to:
 
 - classify clear, local, low-risk work as a small change and implement it without planning ceremony;
+- recommend a separate worktree for each task and a pull request when repository access permits;
+- offer `$grill-with-docs` before planning exceptionally large or domain-heavy changes;
 - show the complete workflow first, then detail each stage in the same order;
 - gather repository evidence for larger or uncertain work before building its review plan;
 - build and review four explicit plan sections: Minimal Reasonable Solution, Matrix Decisions on Complications, Refactoring Options, and Test Coverage Plan;

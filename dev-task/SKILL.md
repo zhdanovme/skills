@@ -1,30 +1,38 @@
 ---
 name: dev-task
 description: >-
-  Implement features, bug fixes, refactors, and other code changes in an
-  existing repository. Use when Codex must change a repository, from a
-  low-risk local edit to cross-system work requiring research, a reviewed
-  four-part plan, implementation, verification, summary, and optional PR delivery.
+  Implement features, bug fixes, refactors, and other changes in an existing
+  repository, from a one-line fix to cross-system work that needs research and
+  a reviewed plan. Use whenever a task requires changing repository files; do
+  not use when nothing in the repository changes, such as read-only analysis,
+  questions, or code review.
 ---
 
 # Dev Task
 
-Deliver the requested behavior at the lowest justified total cost. Prefer a local change. Widen scope only to protect correctness, ownership, or compatibility, or to materially reduce total complexity or risk.
+Deliver the requested behavior at the lowest justified total cost. Three rules shape every step:
+
+- **Change scope:** prefer a local change. Widen it only to protect correctness, ownership, or compatibility, or to materially reduce total complexity or risk.
+- **Process scope:** plan in proportion to uncertainty and risk. Work that meets every direct-path criterion in step 1 skips planning; other work gets evidence gathering and a reviewed plan before code.
+- **Completion:** only fresh verification evidence and a complete-diff review without material findings prove completion; neither a commit nor an open PR does.
 
 ## Workflow
 
 ```mermaid
 flowchart TD
-    A["Requested change"] --> B["Inspect and route"]
+    A["Requested change"] --> B["1. Inspect and route; recommend a task worktree"]
     B --> C{"All direct-path criteria true?"}
-    C -->|Yes| D["Implement"]
-    C -->|No| E["Gather review-plan inputs"]
-    E --> F["Build four-part review plan"]
-    F --> G["Review and revise plan"]
+    C -->|Yes| D["5. Implement"]
+    C -->|No| Q{"Exceptionally large or domain-heavy?"}
+    Q -->|Yes| R["Offer $grill-with-docs"]
+    R --> E["2. Gather review-plan inputs"]
+    Q -->|No| E
+    E --> F["3. Build four-part review plan"]
+    F --> G["4. Review and revise plan"]
     G --> D
-    D --> H["Verify"]
-    H --> I["Summarize with $information-design"]
-    I --> J{"PR delivery in scope?"}
+    D --> H["6. Verify"]
+    H --> I["7. Summarize with $information-design"]
+    I --> J{"8. PR available and in scope?"}
     J -->|Yes| K["Open or update draft PR"]
     J -->|No| L["Review complete diff"]
     K --> L
@@ -48,7 +56,13 @@ Use the **direct path** only when every condition holds:
 
 On the direct path, skip steps 2–4 and continue with implementation. Otherwise use the **reviewed path**.
 
-Ask one focused question only when a missing choice would change behavior, compatibility, risk, or scope. Decide reversible details independently.
+Recommend a separate Git worktree for each task, including direct-path work, when the repository and environment support it. Work in an existing task-specific worktree if one is already assigned. Preserve uncommitted work in the current checkout when creating a new one; if the task builds on that work, copy it into the new worktree or stay in the current checkout.
+
+Involve the user in proportion to the open decision:
+
+- Decide reversible details independently.
+- Ask one focused question only when a missing choice would change behavior, compatibility, risk, or scope.
+- On the reviewed path, offer `$grill-with-docs` before gathering review-plan inputs when the work is exceptionally large or domain-heavy: it has dependent stages, crosses multiple domain boundaries, or leaves domain terms or consequential design choices unresolved. Line count alone does not qualify. Explain which uncertainties warrant the interview. Run it if the user accepts; otherwise continue the reviewed path using available evidence.
 
 ## 2. Gather Review-Plan Inputs
 
@@ -70,15 +84,13 @@ Start with a compact change contract: outcome, invariants, scope, and non-goals.
 
 ### 1. Minimal Reasonable Solution
 
-State the implementation steps and the smallest solution that satisfies the contract without sacrificing correctness, ownership, compatibility, or justified future change cost. Verify that it:
+State the smallest solution that satisfies the contract without sacrificing correctness, ownership, compatibility, or justified future change cost, and list its implementation steps. Verify that it:
 
 - fixes the root cause where the invariant is owned;
 - keeps related behavior cohesive and future changes local;
 - reuses existing concepts instead of creating parallel representations;
 - adds an abstraction only when it removes more complexity than it creates;
 - keeps blast radius and operational risk proportional to demonstrated value.
-
-Prefer the smaller coherent solution. Widen the diff only for correctness, ownership, compatibility, or a material reduction in total complexity or risk.
 
 ### 2. Matrix Decisions on Complications
 
@@ -110,9 +122,9 @@ Map every invariant, material decision, and risk to evidence:
 
 Cover changed behavior, regression risk, boundaries, side effects, failure paths, required static checks, and rollout or rollback when state or compatibility changes. Prefer semantic assertions against stable outcomes. Assert exact wording only when it is an explicit contract.
 
-All four sections are mandatory. Only sections 2 and 3 may use `Not applicable`, with a concrete reason.
+All four sections are mandatory. Only Matrix Decisions on Complications and Refactoring Options may use `Not applicable`, with a concrete reason. Keep the four headings in the active plan.
 
-Keep the four headings in the active plan. Create `<repo-root>/.dev-tasks/<name>.md` only when the work is decision-heavy, crosses subsystems, has dependent stages, or needs handoff. Before creating anything under `.dev-tasks`, ensure the target repository's `.gitignore` contains the idempotent entry `.dev-tasks/`; create `.gitignore` if it does not exist, and preserve all existing entries. Start every durable task file with this YAML frontmatter:
+**Durable task file.** Create `<repo-root>/.dev-tasks/<name>.md` only when the work is decision-heavy, crosses subsystems, has dependent stages, or needs handoff. Before creating anything under `.dev-tasks`, ensure the target repository's `.gitignore` contains the idempotent entry `.dev-tasks/`; create `.gitignore` if it does not exist, and preserve all existing entries. Start every durable task file with this YAML frontmatter:
 
 ```yaml
 ---
@@ -147,23 +159,23 @@ For a durable task file, set `status: todo` after the plan passes review.
 
 ## 5. Implement
 
-Follow repository patterns and the approved plan. Keep unrelated changes out of the diff. For a bug, add a regression test that fails on the original defect when practical. Follow test-first development when the user or repository requires it.
+Follow repository patterns and, on the reviewed path, the reviewed plan. Keep unrelated changes out of the diff. For a bug, add a regression test that fails on the original defect when practical. Follow test-first development when the user or repository requires it.
 
 For a durable task file, set `status: progress` immediately before implementation begins.
 
-If implementation invalidates the plan, stop and revise the affected plan sections. Record any material deviation before continuing.
+If implementation invalidates the plan, stop and revise the affected plan sections. If a direct-path change stops meeting any direct-path criterion, stop and switch to the reviewed path. Record any material deviation before continuing.
 
 ## 6. Verify
 
-Run the planned targeted checks first, then the broader relevant suite. Read the output and fix failures. Prove the observable outcome and every invariant with fresh evidence.
+Run targeted checks first — on the reviewed path, those in the Test Coverage Plan — then the broader relevant suite. Read the output and fix failures. Prove the observable outcome and every invariant with fresh evidence.
 
-Inspect the task diff and working tree for missing, unrelated, or accidental changes. Neither a commit nor an open PR proves completion.
+Inspect the task diff and working tree for missing, unrelated, or accidental changes.
 
 ## 7. Summarize with Information Design
 
 After verification, use `$information-design` to build the implementation summary from the actual diff and evidence, not from the original plan. Lead with the outcome, then include only what helps the reader assess the change:
 
-- a concise **System context** section before the change details: explain how the affected part currently works and is structured, including its responsibility, relevant components or boundaries, important control or data flow, and where the change fits; include only the context needed to understand the change and its impact, using one or two sentences for a simple local edit;
+- **System context**, before the change details: how the affected part works (responsibility, relevant components or boundaries, important control or data flow) and where the change fits, limited to what the reader needs to understand the change and its impact — one or two sentences for a simple local edit;
 - what changed, where, and why;
 - exact validation commands and results;
 - diff cost: size and what justified it;
@@ -174,7 +186,9 @@ Keep direct-change summaries compact. Separate verified fact from reviewer judgm
 
 ## 8. Deliver and Review
 
-When PR delivery is in scope and a remote is available:
+Recommend a pull request as the default delivery for each task when a remote and PR access are available. If the user requested local-only work or PR creation is unavailable, deliver locally and state why there is no PR.
+
+For PR delivery:
 
 1. open or update the draft PR with the implementation summary, then set a durable task file to `status: pr` only after the PR exists;
 2. review the complete PR diff for correctness, scope, tests, security, compatibility, unnecessary complexity, and accidental edits;
