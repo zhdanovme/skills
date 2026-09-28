@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate subagent definitions shipped by skills and relative links in skill documents.
+"""Validate subagent definitions, the task template contract, and relative links in skill documents.
 
 The installers copy `<skill>/subagents/<platform>/<skill>-*` into agent homes and treat
 that prefix as the ownership boundary, so every definition must follow it. A role ships
@@ -107,8 +107,21 @@ def check_subagents(skill_dir):
     return len(roles)
 
 
+def check_task_template(skill_dir):
+    template = skill_dir / "templates" / "task.md"
+    if not template.exists():
+        return
+    fields, _ = parse_claude(template)
+    if fields.get("status") != "draft" or fields.get("complexity") != "null":
+        fail(f"{template}: must start with status: draft and complexity: null")
+
+
 def check_links(skill_dir):
-    documents = [skill_dir / "SKILL.md", *sorted(skill_dir.glob("references/*.md"))]
+    documents = [
+        skill_dir / "SKILL.md",
+        *sorted(skill_dir.glob("references/*.md")),
+        *sorted(skill_dir.glob("templates/*.md")),
+    ]
     for document in documents:
         for target in LINK.findall(document.read_text(encoding="utf-8")):
             if re.match(r"[a-z]+:|#", target):
@@ -123,6 +136,7 @@ if not skill_dirs:
 role_count = 0
 for skill_dir in skill_dirs:
     role_count += check_subagents(skill_dir)
+    check_task_template(skill_dir)
     check_links(skill_dir)
 if role_count == 0:
     fail("no subagent definitions were discovered")
