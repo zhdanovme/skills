@@ -23,10 +23,15 @@ Claude Code:
 
 With no arguments the installer writes to both agent homes:
 
-| Agent | Default home | Skills | Rules file |
-| --- | --- | --- | --- |
-| Codex | `$CODEX_HOME`, or `~/.codex` | `<home>/skills` | `<home>/AGENTS.md` |
-| Claude Code | `$CLAUDE_CONFIG_DIR`, or `~/.claude` | `<home>/skills` | `<home>/CLAUDE.md` |
+| Agent | Default home | Skills | Subagents | Rules file |
+| --- | --- | --- | --- | --- |
+| Codex | `$CODEX_HOME`, or `~/.codex` | `<home>/skills` | `<home>/agents/*.toml` | `<home>/AGENTS.md` |
+| Claude Code | `$CLAUDE_CONFIG_DIR`, or `~/.claude` | `<home>/skills` | `<home>/agents/*.md` | `<home>/CLAUDE.md` |
+
+Skills that delegate work ship subagent definitions as
+`<skill>/subagents/<platform>/<skill>-*`. The installer owns the `<skill>-*`
+files of that platform in `<home>/agents`: it replaces them on every run and
+removes stale ones, while other agent files stay untouched.
 
 Both rules files receive the same repository `AGENTS.md` content between these
 markers:
@@ -73,7 +78,8 @@ Copy this prompt into your coding agent:
 ```text
 Use https://github.com/zhdanovme/skills as the source repository. Add its
 `codebase-map`, `dev-task`, `information-design`, and `learn-from-pr-reviews`
-skills to the shared skills available in your current agent environment. Merge
+skills to the shared skills available in your current agent environment, and
+register the subagent definitions under `dev-task/subagents/` for your agent. Merge
 the principles from the repository's `AGENTS.md` into the appropriate shared or global agent
 rules. Determine the correct locations and formats from the agent, tools, and
 conventions currently in use. Preserve existing configuration, avoid duplicate
@@ -81,8 +87,8 @@ instructions, and
 verify that the installed skills and merged rules are discoverable and active.
 ```
 
-The install scripts perform the same skill installation and managed rules
-extension automatically, for `AGENTS.md` and `CLAUDE.md` alike.
+The install scripts perform the same skill and subagent installation and managed
+rules extension automatically, for `AGENTS.md` and `CLAUDE.md` alike.
 
 A compact collection of agent skills for disciplined software development and information design. The repository favors high-value outcomes, explicit constraints, maintainable boundaries, effective communication, and evidence-based completion.
 
@@ -91,7 +97,7 @@ A compact collection of agent skills for disciplined software development and in
 | Skill | Purpose |
 | --- | --- |
 | [`codebase-map`](codebase-map/SKILL.md) | Explain a repository through Mermaid system architecture and module logic, runtime volume, assurance, and architectural fitness. |
-| [`dev-task`](dev-task/SKILL.md) | Route small changes directly and guide larger changes through root-cause research, architectural review, implementation, verification, and PR review. |
+| [`dev-task`](dev-task/SKILL.md) | Triage each change as `by-pass`, `review`, or `grill`, then guide it through research, a reviewed plan, staged or parallel implementation with subagents, one-pass verification, and PR review, keeping the state in a committed task folder. |
 | [`information-design`](information-design/SKILL.md) | Structure AI responses, documentation, explanations, and landing pages around the reader's relevant uncertainties, decisions, and actions. |
 | [`learn-from-pr-reviews`](learn-from-pr-reviews/SKILL.md) | Read PR feedback and preserve durable, project-specific prevention rules in `AGENTS.md`. |
 
@@ -112,16 +118,18 @@ Use `codebase-map` when onboarding to a repository, assessing its architecture, 
 
 Use `dev-task` when implementing a feature, bug fix, refactor, or other change in an existing repository. It guides the agent to:
 
-- classify clear, local, low-risk work as a small change and implement it without planning ceremony;
+- run a short pre-research and record the task's complexity: `by-pass` for clear, local, low-risk changes implemented without planning ceremony, `review` for work that needs evidence and a reviewed plan, and `grill` when several questions only the user can settle remain and a `$grill-me` interview on the task file resolves them (`grill-me` is a separate skill this repository does not ship; without it the agent runs the interview itself);
+- keep every task's state in a committed task folder `.dev-tasks/<task>/`, built from the skill's templates: `task.md` with the lifecycle status (`draft`, `todo`, `progress`, optional `pr`, `done`), complexity, contract, evidence, and four-part plan; `execution-plan.md` with stages, waves, executors, and a verification schedule; `stages/` with one spec per worker stage; and `result.md` with the implementation summary;
 - recommend a separate worktree for each task and a pull request when repository access permits;
-- offer `$grill-with-docs` before planning exceptionally large or domain-heavy changes;
+- split independently deliverable parts of a request into separate tasks, each with its own task folder, worktree, and PR, when at least one part needs `review` or `grill`;
 - show the complete workflow first, then detail each stage in the same order;
-- gather repository evidence for larger or uncertain work before building its review plan;
+- keep the main session as the orchestrator and delegate only bounded roles: built-in explorers for evidence, `dev-task-worker` for plan stages, and the read-only `dev-task-reviewer` for plan and diff review, each from a self-contained brief;
 - build and review four explicit plan sections: Minimal Reasonable Solution, Matrix Decisions on Complications, Refactoring Options, and Test Coverage Plan;
-- persist `.dev-tasks/<name>.md` only when a durable multi-step or decision-heavy plan is useful, add `.dev-tasks/` to the target repository's `.gitignore`, and track its lifecycle through the structured `draft`, `todo`, `progress`, optional `pr`, and `done` statuses;
+- decompose implementation into stages and, when write scopes are disjoint and contracts are frozen, run parallel waves of workers in separate worktrees merged into one task branch;
+- schedule every check once, at the most integrated point where its failure can still be traced, so time goes to fixes rather than repeated test runs;
 - implement and verify the systemically coherent change rather than optimizing only for the smallest immediate diff;
-- create the implementation summary with `$information-design` from the verified diff and evidence;
-- use that summary for PR delivery, review the complete diff, fix material findings, and refresh the summary before final delivery.
+- write `result.md` with `$information-design` from the verified diff and evidence and use it as the PR description;
+- review the complete diff, fix material findings, and refresh `result.md` before final delivery.
 
 ## `information-design`
 
@@ -155,7 +163,8 @@ Use `learn-from-pr-reviews` when reading or addressing pull-request feedback. It
 |-- install.sh
 |-- tests/
 |   |-- install_test.ps1
-|   `-- install_test.sh
+|   |-- install_test.sh
+|   `-- subagents_test.py
 |-- codebase-map/
 |   |-- SKILL.md
 |   |-- agents/
@@ -166,8 +175,22 @@ Use `learn-from-pr-reviews` when reading or addressing pull-request feedback. It
 |   |   `-- reporting.md
 |-- dev-task/
 |   |-- SKILL.md
-|   `-- agents/
-|       `-- openai.yaml
+|   |-- agents/
+|   |   `-- openai.yaml
+|   |-- references/
+|   |   |-- parallel-execution.md
+|   |   `-- subagents.md
+|   |-- templates/
+|   |   |-- execution-plan.md
+|   |   |-- stage.md
+|   |   `-- task.md
+|   `-- subagents/
+|       |-- claude/
+|       |   |-- dev-task-reviewer.md
+|       |   `-- dev-task-worker.md
+|       `-- codex/
+|           |-- dev-task-reviewer.toml
+|           `-- dev-task-worker.toml
 |-- information-design/
 |   |-- SKILL.md
 |   `-- agents/
@@ -180,6 +203,8 @@ Use `learn-from-pr-reviews` when reading or addressing pull-request feedback. It
 
 - [`AGENTS.md`](AGENTS.md) defines the repository's shared principles for critical reasoning and information design.
 - [`codebase-map/SKILL.md`](codebase-map/SKILL.md) contains the repository-system model, evidence discipline, and architecture-fitness workflow.
-- [`dev-task/SKILL.md`](dev-task/SKILL.md) contains the development workflow and its architecture, complexity, refactoring, and testing principles.
+- [`dev-task/SKILL.md`](dev-task/SKILL.md) contains the development workflow and its architecture, complexity, refactoring, testing, and delegation principles; its `templates/` define the task folder files, its `references/` hold the subagent brief contracts and the parallel worktree protocol, and `subagents/` holds the Claude Code and Codex definitions of its worker and reviewer.
+- `agents/openai.yaml` files are Codex UI metadata for a skill, not subagent definitions.
+- [`tests/`](tests) verify both installers and the consistency of shipped subagent definitions: `sh tests/install_test.sh`, `pwsh tests/install_test.ps1`, and `python3 tests/subagents_test.py`.
 - [`information-design/SKILL.md`](information-design/SKILL.md) contains the artifact-agnostic information-design workflow and audit.
 - [`learn-from-pr-reviews/SKILL.md`](learn-from-pr-reviews/SKILL.md) contains the PR-feedback triage and durable project-memory workflow.

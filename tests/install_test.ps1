@@ -50,6 +50,82 @@ function Assert-SkillsInstalled {
     }
 }
 
+# Installed subagents mirror <skill>/subagents/<platform>/<skill>-* byte for byte,
+# and a home never receives the other platform's definitions.
+function Assert-SubagentsInstalled {
+    param([string]$TargetPath, [string]$Platform)
+
+    $extension = if ($Platform -eq "claude") { ".md" } else { ".toml" }
+    $otherPlatform = if ($Platform -eq "claude") { "codex" } else { "claude" }
+    $otherExtension = if ($Platform -eq "claude") { ".toml" } else { ".md" }
+    $agentsPath = Join-Path $TargetPath "agents"
+    $installedAgents = 0
+    $skillDirectories = Get-ChildItem -LiteralPath $repo -Directory | Where-Object {
+        Test-Path -LiteralPath (Join-Path $_.FullName "SKILL.md")
+    }
+    foreach ($skillDirectory in $skillDirectories) {
+        $prefix = $skillDirectory.Name + "-"
+        $source = Join-Path (Join-Path $skillDirectory.FullName "subagents") $Platform
+        if (Test-Path -LiteralPath $source -PathType Container) {
+            foreach ($agent in (Get-ChildItem -LiteralPath $source -File)) {
+                if (-not ($agent.Name.StartsWith($prefix) -and $agent.Name.EndsWith($extension))) {
+                    continue
+                }
+                $installed = Join-Path $agentsPath $agent.Name
+                if (-not (Test-Path -LiteralPath $installed)) {
+                    throw "$($agent.Name) was not installed into $agentsPath"
+                }
+                if ((Get-FileHash -LiteralPath $installed).Hash -ne (Get-FileHash -LiteralPath $agent.FullName).Hash) {
+                    throw "$($agent.Name) differs from its source in $agentsPath"
+                }
+                $installedAgents++
+            }
+        }
+        $foreignSource = Join-Path (Join-Path $skillDirectory.FullName "subagents") $otherPlatform
+        if (Test-Path -LiteralPath $foreignSource -PathType Container) {
+            foreach ($foreign in (Get-ChildItem -LiteralPath $foreignSource -File)) {
+                if (-not ($foreign.Name.StartsWith($prefix) -and $foreign.Name.EndsWith($otherExtension))) {
+                    continue
+                }
+                if (Test-Path -LiteralPath (Join-Path $agentsPath $foreign.Name)) {
+                    throw "$Platform home $TargetPath received $($foreign.Name)"
+                }
+            }
+        }
+    }
+    if ($installedAgents -eq 0) {
+        throw "No $Platform subagents were discovered"
+    }
+}
+
+# Seeds agents the installer must leave alone (another agent, another skill's prefix,
+# the managed prefix with the other platform's extension) and one stale managed agent.
+function New-SeededAgents {
+    param([string]$TargetPath, [string]$Extension, [string]$OtherExtension)
+
+    $agentsPath = Join-Path $TargetPath "agents"
+    New-Item -ItemType Directory -Path $agentsPath -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $agentsPath ("unrelated" + $Extension)) -Value "keep"
+    Set-Content -LiteralPath (Join-Path $agentsPath ("codebase-map-custom" + $Extension)) -Value "keep"
+    Set-Content -LiteralPath (Join-Path $agentsPath ("dev-task-custom" + $OtherExtension)) -Value "keep"
+    Set-Content -LiteralPath (Join-Path $agentsPath ("dev-task-retired" + $Extension)) -Value "stale"
+}
+
+function Assert-AgentsPreserved {
+    param([string]$TargetPath, [string]$Extension, [string]$OtherExtension)
+
+    $agentsPath = Join-Path $TargetPath "agents"
+    foreach ($file in @(("unrelated" + $Extension), ("codebase-map-custom" + $Extension), ("dev-task-custom" + $OtherExtension))) {
+        $path = Join-Path $agentsPath $file
+        if (-not (Test-Path -LiteralPath $path) -or (Get-Content -LiteralPath $path -Raw).Trim() -cne "keep") {
+            throw "$file was changed in $TargetPath"
+        }
+    }
+    if (Test-Path -LiteralPath (Join-Path $agentsPath ("dev-task-retired" + $Extension))) {
+        throw "A stale managed agent survived in $TargetPath"
+    }
+}
+
 function Assert-ManagedBlock {
     param([string]$MemoryPath)
 
@@ -97,12 +173,15 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $target "skills/dev-task") -Force | Out-Null
     Set-Content -LiteralPath (Join-Path $target "skills/dev-task/stale.txt") -Value "stale"
     New-SeededMemory -MemoryPath (Join-Path $target "AGENTS.md")
+    New-SeededAgents -TargetPath $target -Extension ".toml" -OtherExtension ".md"
 
     & $installer -Target $target | Out-Null
     $agentsAfterFirstInstall = Get-Content -LiteralPath (Join-Path $target "AGENTS.md") -Raw
     & $installer -Target $target | Out-Null
 
     Assert-SkillsInstalled -TargetPath $target
+    Assert-SubagentsInstalled -TargetPath $target -Platform "codex"
+    Assert-AgentsPreserved -TargetPath $target -Extension ".toml" -OtherExtension ".md"
     if (-not (Test-Path -LiteralPath (Join-Path $target "skills/unrelated/data.txt"))) {
         throw "Unrelated skill was removed"
     }
@@ -121,12 +200,15 @@ try {
     # -ClaudeTarget installs a Claude Code home with CLAUDE.md and leaves AGENTS.md alone.
     $claudeTarget = Join-Path $tmp "claude home"
     New-SeededMemory -MemoryPath (Join-Path $claudeTarget "CLAUDE.md")
+    New-SeededAgents -TargetPath $claudeTarget -Extension ".md" -OtherExtension ".toml"
 
     & $installer -ClaudeTarget $claudeTarget | Out-Null
     $claudeAfterFirstInstall = Get-Content -LiteralPath (Join-Path $claudeTarget "CLAUDE.md") -Raw
     & $installer -ClaudeTarget $claudeTarget | Out-Null
 
     Assert-SkillsInstalled -TargetPath $claudeTarget
+    Assert-SubagentsInstalled -TargetPath $claudeTarget -Platform "claude"
+    Assert-AgentsPreserved -TargetPath $claudeTarget -Extension ".md" -OtherExtension ".toml"
     Assert-ExistingRulesPreserved -MemoryPath (Join-Path $claudeTarget "CLAUDE.md")
     Assert-ManagedBlock -MemoryPath (Join-Path $claudeTarget "CLAUDE.md")
     if ((Get-Content -LiteralPath (Join-Path $claudeTarget "CLAUDE.md") -Raw) -cne $claudeAfterFirstInstall) {
@@ -143,8 +225,10 @@ try {
     $env:CLAUDE_CONFIG_DIR = $defaultClaude
     & $installer | Out-Null
     Assert-SkillsInstalled -TargetPath $defaultCodex
+    Assert-SubagentsInstalled -TargetPath $defaultCodex -Platform "codex"
     Assert-ManagedBlock -MemoryPath (Join-Path $defaultCodex "AGENTS.md")
     Assert-SkillsInstalled -TargetPath $defaultClaude
+    Assert-SubagentsInstalled -TargetPath $defaultClaude -Platform "claude"
     Assert-ManagedBlock -MemoryPath (Join-Path $defaultClaude "CLAUDE.md")
     if (Test-Path -LiteralPath (Join-Path $defaultCodex "CLAUDE.md")) {
         throw "The Codex default home received a CLAUDE.md"
